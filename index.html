@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İyi Ki Doğdun Ablacım ✨</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Playfair+Display:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #111625 0%, #05070d 100%);
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #fff;
+            user-select: none;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Giriş Ekranı (Müzik ve Animasyon Tetikleyici) */
+        #intro-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            background: rgba(5, 7, 13, 0.92);
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 1.2s ease, visibility 1.2s ease;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .terminal-tag {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: #64ffda;
+            background: rgba(100, 255, 218, 0.08);
+            border: 1px solid rgba(100, 255, 218, 0.25);
+            padding: 6px 14px;
+            border-radius: 20px;
+            margin-bottom: 24px;
+            letter-spacing: 0.5px;
+        }
+
+        #start-btn {
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            color: white;
+            border: none;
+            padding: 16px 36px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(255, 107, 157, 0.35);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        #start-btn:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 15px 40px rgba(255, 107, 157, 0.55);
+        }
+
+        /* Ana Mesaj Kartı */
+        #main-card {
+            position: fixed;
+            top: 12%;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            z-index: 5;
+            text-align: center;
+            width: 90%;
+            max-width: 620px;
+            padding: 32px 28px;
+            background: rgba(15, 20, 35, 0.45);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1.8s ease, transform 1.8s ease;
+        }
+
+        #main-card.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
+
+        .code-comment {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 5vw, 3.1rem);
+            font-weight: 600;
+            background: linear-gradient(to right, #fff, #ffc3d8, #ffd8a8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 14px;
+            line-height: 1.2;
+        }
+
+        p.subtitle {
+            font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+            color: #cbd5e1;
+            line-height: 1.6;
+            font-weight: 300;
+        }
+
+        .signature {
+            margin-top: 18px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+            color: #ff85a2;
+        }
+
+        /* Sağ Alt Müzik Kontrolü */
+        #music-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 8;
+            background: rgba(15, 20, 35, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 10px 16px;
+            border-radius: 30px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            color: #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        #music-control:hover {
+            border-color: #ff85a2;
+        }
+
+        .equalizer {
+            display: flex;
+            align-items: flex-end;
+            height: 14px;
+            gap: 2px;
+        }
+
+        .bar {
+            width: 3px;
+            background: #ff85a2;
+            border-radius: 2px;
+            animation: bounce 0.8s infinite ease-in-out;
+        }
+        .bar:nth-child(2) { animation-delay: 0.2s; }
+        .bar:nth-child(3) { animation-delay: 0.4s; }
+        .paused .bar { animation: none; height: 4px !important; }
+
+        @keyframes bounce {
+            0%, 100% { height: 4px; }
+            50% { height: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Şarkı Dosyası -->
+    <audio id="bg-music" src="sarki.mp3" loop preload="auto"></audio>
+
+    <!-- Giriş Ekranı -->
+    <div id="intro-screen">
+        <div class="terminal-tag">&gt; syst_init: special_day.exe</div>
+        <button id="start-btn">Sürprizi Başlat ✨</button>
+    </div>
+
+    <!-- Kutlama Kartı -->
+    <div id="main-card">
+        <span class="code-comment">// Hayatımın en güzel algoritması...</span>
+        <h1>Doğum Günün Kutlu Olsun Ablucum</h1>
+        <p class="subtitle">
+            Yeni yaşında tüm güzellikler seni bulsun. İyi ki varsın, iyi ki benim ablamsın! 🥂
+        </p>
+        <div class="signature">&lt;3 Yazılımcı Kardeşin</div>
+    </div>
+
+    <!-- Müzik Butonu -->
+    <div id="music-control">
+        <div class="equalizer" id="eq">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+        <span id="music-text">Belki Üstümüzden Bir Kuş Geçer</span>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const introScreen = document.getElementById('intro-screen');
+        const startBtn = document.getElementById('start-btn');
+        const mainCard = document.getElementById('main-card');
+        const audio = document.getElementById('bg-music');
+        const musicControl = document.getElementById('music-control');
+        const eq = document.getElementById('eq');
+
+        let width, height;
+        let flowers = [];
+        let particles = [];
+        let animationStarted = false;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Ateşböceği / Parıltı Parçacıkları
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 2.2 + 0.5;
+                this.speedX = (Math.random() - 0.5) * 0.6;
+                this.speedY = -Math.random() * 0.7 - 0.2;
+                this.alpha = Math.random() * 0.7 + 0.2;
+                this.color = Math.random() > 0.5 ? '#ffd8a8' : '#ff85a2';
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.y < -10 || this.x < -10 || this.x > width + 10) {
+                    this.reset();
+                    this.y = height + 10;
+                }
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Organik Büyüyen Çiçek Sınıfı
+        class Flower {
+            constructor(x, targetHeight, curve, petalColor, centerColor, delay) {
+                this.x = x;
+                this.baseY = height;
+                this.targetHeight = targetHeight;
+                this.currentHeight = 0;
+                this.curve = curve;
+                this.petalColor = petalColor;
+                this.centerColor = centerColor;
+                this.bloomProgress = 0;
+                this.delay = delay;
+                this.timer = 0;
+                this.swayOffset = Math.random() * Math.PI * 2;
+            }
+
+            update(time) {
+                this.timer++;
+                if (this.timer < this.delay) return;
+
+                if (this.currentHeight < this.targetHeight) {
+                    this.currentHeight += (this.targetHeight - this.currentHeight) * 0.025;
+                }
+                if (this.currentHeight > this.targetHeight * 0.85 && this.bloomProgress < 1) {
+                    this.bloomProgress += 0.015;
+                }
+                this.sway = Math.sin(time * 0.0015 + this.swayOffset) * 12;
+            }
+
+            draw() {
+                if (this.timer < this.delay) return;
+
+                const progress = this.currentHeight / this.targetHeight;
+                const topX = this.x + this.curve * progress + (this.sway || 0) * progress;
+                const topY = this.baseY - this.currentHeight;
+                const cpX = this.x + this.curve * 0.3;
+                const cpY = this.baseY - this.currentHeight * 0.5;
+
+                // Sap çizimi
+                ctx.save();
+                ctx.strokeStyle = '#2d6a4f';
+                ctx.lineWidth = 3.5;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.baseY);
+                ctx.quadraticCurveTo(cpX, cpY, topX, topY);
+                ctx.stroke();
+
+                // Yapraklar
+                if (progress > 0.45) {
+                    this.drawLeaf(cpX, cpY, 1, progress);
+                }
+                if (progress > 0.65) {
+                    const lx = this.x + this.curve * 0.65;
+                    const ly = this.baseY - this.currentHeight * 0.72;
+                    this.drawLeaf(lx, ly, -1, progress);
+                }
+
+                // Çiçek Yaprakları (Taç Yapraklar)
+                if (this.bloomProgress > 0) {
+                    ctx.translate(topX, topY);
+                    const petals = 8;
+                    const maxRadius = (width < 600 ? 24 : 34) * this.bloomProgress;
+
+                    for (let i = 0; i < petals; i++) {
+                        ctx.save();
+                        ctx.rotate((Math.PI * 2 / petals) * i + this.bloomProgress * 0.3);
+                        ctx.fillStyle = this.petalColor;
+                        ctx.shadowBlur = 18;
+                        ctx.shadowColor = this.petalColor;
+                        ctx.globalAlpha = 0.88;
+                        ctx.beginPath();
+                        ctx.ellipse(0, -maxRadius * 0.6, maxRadius * 0.35, maxRadius * 0.65, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    }
+
+                    // Çiçek Merkezi
+                    ctx.fillStyle = this.centerColor;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.centerColor;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, maxRadius * 0.28, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            drawLeaf(x, y, dir, progress) {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(dir * 0.6);
+                ctx.fillStyle = '#40916c';
+                ctx.beginPath();
+                ctx.ellipse(dir * 14, 0, 16 * progress, 6 * progress, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function initScene() {
+            flowers = [];
+            particles = [];
+            for (let i = 0; i < 65; i++) particles.push(new Particle());
+
+            const palette = [
+                { petal: '#ff758f', center: '#ffd166' },
+                { petal: '#ff8fa3', center: '#ffe5ec' },
+                { petal: '#ffb3c1', center: '#f4a261' },
+                { petal: '#e0aaff', center: '#ffd166' },
+                { petal: '#ff9ebb', center: '#fff3b0' }
+            ];
+
+            const count = width < 600 ? 7 : 11;
+            for (let i = 0; i < count; i++) {
+                const spacing = width / (count + 1);
+                const x = spacing * (i + 1) + (Math.random() - 0.5) * 30;
+                const h = height * (0.32 + Math.random() * 0.25);
+                const curve = (Math.random() - 0.5) * 90;
+                const color = palette[i % palette.length];
+                flowers.push(new Flower(x, h, curve, color.petal, color.center, i * 15));
+            }
+        }
+
+        function animate(time) {
+            ctx.clearRect(0, 0, width, height);
+
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            if (animationStarted) {
+                flowers.forEach(f => {
+                    f.update(time);
+                    f.draw();
+                });
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        initScene();
+        animate(0);
+
+        // Başlat Butonu Tıklaması
+        startBtn.addEventListener('click', () => {
+            introScreen.style.opacity = '0';
+            setTimeout(() => introScreen.style.display = 'none', 1200);
+
+            animationStarted = true;
+            musicControl.style.display = 'flex';
+
+            // MP3 Çalma
+            audio.volume = 0.85;
+            audio.play().catch(err => {
+                console.log("MP3 dosyası bulunamadı veya engellendi:", err);
+                document.getElementById('music-text').textContent = "sarki.mp3 bekleniyor...";
+                eq.classList.add('paused');
+            });
+
+            // Çiçekler büyürken kartı göster
+            setTimeout(() => {
+                mainCard.classList.add('visible');
+            }, 1400);
+        });
+
+        // Sağ Alttaki Müzik Durdur/Başlat Kontrolü
+        musicControl.addEventListener('click', () => {
+            if (audio.paused) {
+                audio.play();
+                eq.classList.remove('paused');
+            } else {
+                audio.pause();
+                eq.classList.add('paused');
+            }
+        });
+    </script>
+</body>
+</html>
